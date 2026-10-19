@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google</title>
+    <!-- Подключаем красивые шрифты -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ====== БАЗОВЫЕ СТИЛИ (ТЕМНАЯ ТЕМА GOOGLE) ====== */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #202124;
+            color: #e8eaed;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Полоса загрузки */
+        #loading-bar {
+            position: fixed;
+            top: 0; left: 0; height: 3px;
+            background: linear-gradient(90deg, #8ab4f8, #c58af9);
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 9999;
+            box-shadow: 0 0 10px #8ab4f8;
+        }
+
+        /* Главный экран */
+        #home-screen {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; width: 100%;
+        }
+
+        .google-logo-home {
+            font-size: 80px; font-weight: 500; letter-spacing: -3px;
+            color: #e8eaed; margin-bottom: 30px;
+            font-family: "Product Sans", Arial, sans-serif;
+        }
+
+        .search-container {
+            width: 100%; max-width: 584px; display: flex; align-items: center;
+            background: #303134; border: 1px solid #5f6368;
+            border-radius: 24px; padding: 0 15px; height: 48px; box-sizing: border-box;
+        }
+        .search-container:hover {
+            background: #3c4043; border-color: transparent;
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+        }
+        .search-container input {
+            flex: 1; background: transparent; border: none;
+            color: #e8eaed; font-size: 16px; outline: none; padding: 0 10px;
+        }
+        .search-icon { color: #9aa0a6; font-size: 20px; }
+
+        /* Экран результатов */
+        #results-screen {
+            display: none; width: 100%; flex-direction: column;
+        }
+
+        .results-header {
+            position: sticky; top: 0; background: #202124;
+            padding: 20px 30px 0 30px; border-bottom: 1px solid #3c4043; z-index: 100;
+        }
+        
+        .header-top {
+            display: flex; align-items: center; gap: 20px; margin-bottom: 20px;
+        }
+
+        .google-logo-small {
+            font-size: 24px; font-weight: 500; color: #e8eaed;
+            font-family: "Product Sans", Arial, sans-serif; cursor: pointer;
+        }
+
+        .header-search {
+            max-width: 690px; width: 100%; height: 44px;
+            background: #303134; border-radius: 24px;
+            display: flex; align-items: center; padding: 0 15px;
+            border: 1px solid #5f6368;
+        }
+        .header-search input {
+            flex: 1; background: transparent; border: none;
+            color: #e8eaed; font-size: 16px; outline: none;
+        }
+
+        .tabs { display: flex; gap: 30px; margin-left: 110px; }
+        .tab {
+            padding: 10px 0; color: #9aa0a6; cursor: pointer;
+            font-size: 14px; position: relative; font-weight: 500;
+        }
+        .tab:hover { color: #e8eaed; }
+        .tab.active { color: #8ab4f8; }
+        .tab.active::after {
+            content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+            height: 3px; background: #8ab4f8; border-radius: 3px 3px 0 0;
+        }
+
+        /* Контент */
+        .content-area { padding: 20px 30px 50px 140px; max-width: 700px; display: none; }
+        .content-area.active { display: block; }
+
+        /* Обзор от ИИ */
+        .ai-overview {
+            padding: 10px 0; margin-bottom: 30px;
+            border-bottom: 1px solid #3c4043; padding-bottom: 30px;
+        }
+        .ai-header {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #e8eaed;
+        }
+        .ai-sparkle { color: #8ab4f8; font-size: 20px; }
+        .ai-text { font-size: 15px; line-height: 1.7; color: #bdc1c6; }
+        .ai-text strong { color: #e8eaed; }
+
+        /* Результаты поиска (Сайты) */
+        .search-results-list { display: flex; flex-direction: column; gap: 30px; }
+        .result-item { cursor: pointer; text-decoration: none; color: inherit; display: block; }
+        .result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .result-favicon {
+            width: 28px; height: 28px; background: #303134; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .result-url { font-size: 14px; color: #bdc1c6; }
+        .result-title {
+            font-size: 20px; color: #8ab4f8; margin-bottom: 6px;
+            text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.2s;
+        }
+        .result-item:hover .result-title { text-decoration-color: #8ab4f8; }
+        .result-snippet { font-size: 14px; color: #bdc1c6; line-height: 1.5; }
+
+        /* Сетка картинок */
+        .image-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px; padding: 10px 0;
+        }
+        .image-card {
+            border-radius: 12px; overflow: hidden; cursor: pointer;
+            position: relative; aspect-ratio: 1 / 1; background: #303134;
+        }
+        .image-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .image-card:hover img { transform: scale(1.05); }
+
+        /* Модальное окно */
+        #compliment-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: linear-gradient(135deg, #2a2c31, #1e1f22);
+            padding: 30px; border-radius: 20px; max-width: 400px; text-align: center;
+            position: relative; border: 1px solid #5f6368; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-box p { font-size: 18px; color: #e8eaed; margin: 0; line-height: 1.6; font-family: 'Playfair Display', serif; }
+        .close-btn {
+            position: absolute; top: 10px; right: 15px; font-size: 24px; color: #9aa0a6;
+            cursor: pointer; background: none; border: none; transition: color 0.2s;
+        }
+        .close-btn:hover { color: #e8eaed; }
+
+
+        /* ========================================================= */
+        /* ====== ПРЕМИАЛЬНОЕ ОФОРМЛЕНИЕ ОТКРЫТЫХ САЙТОВ =========== */
+        /* ========================================================= */
+        
+        #mock-website-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f1012; /* Более глубокий темный фон для контраста */
+            z-index: 2000;
+            overflow-y: auto;
+            /* Плавная прокрутка */
+            scroll-behavior: smooth;
+        }
+
+        /* Красивый скроллбар */
+        #mock-website-screen::-webkit-scrollbar { width: 8px; }
+        #mock-website-screen::-webkit-scrollbar-track { background: #0f1012; }
+        #mock-website-screen::-webkit-scrollbar-thumb { background: #3c4043; border-radius: 4px; }
+        #mock-website-screen::-webkit-scrollbar-thumb:hover { background: #5f6368; }
+
+        /* Плавающая кнопка Назад (Glassmorphism) */
+        .mock-header {
+            position: fixed;
+            top: 20px; left: 20px;
+            z-index: 2100;
+        }
+        .mock-back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .mock-back-btn:hover {
+            background: #fff;
+            color: #000;
+            transform: translateX(-5px);
+        }
+
+        .mock-content {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            padding: 100px 20px 60px 20px;
+            box-sizing: border-box;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* --- ДИЗАЙН 1: БЛОГ (Почему я люблю) --- */
+        .blog-hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        .blog-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(90deg, #8ab4f8, #c58af9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+        .blog-hero p {
+            font-size: 18px;
+            color: #9aa0a6;
+            font-style: italic;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .blog-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        .blog-card {
+            background: linear-gradient(145deg, #1a1b1e, #23252a);
+            border: 1px solid #2d2f34;
+            border-radius: 24px;
+            padding: 40px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .blog-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at top left, rgba(138,180,248,0.1), transparent 50%);
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        .blog-card:hover {
+            transform: translateY(-10px);
+            border-color: #8ab4f8;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .blog-card:hover::before { opacity: 1; }
+        .blog-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            color: #e8eaed;
+            margin-top: 0;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        .blog-card p {
+            color: #bdc1c6;
+            line-height: 1.7;
+            font-size: 16px;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+        .blog-quote {
+            font-size: 24px;
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+            color: #e8eaed;
+            line-height: 1.5;
+            padding: 40px;
+            border-top: 1px solid #3c4043;
+            border-bottom: 1px solid #3c4043;
+            font-style: italic;
+        }
+
+
+        /* --- ДИЗАЙН 2: ЖУРНАЛ (Королева красоты) --- */
+        .magazine-hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .magazine-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 56px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 0 10px 0;
+            color: #fff;
+        }
+        .magazine-hero p {
+            color: #d4af37; /* Золотой оттенок */
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .rating-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .rating-score {
+            font-size: 72px;
+            font-weight: 700;
+            color: #d4af37;
+            line-height: 1;
+            font-family: 'Playfair Display', serif;
+        }
+        .rating-desc {
+            text-align: left;
+            color: #bdc1c6;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .beauty-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .beauty-list li {
+            display: flex;
+            gap: 25px;
+            padding: 30px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+            border-left: 2px solid #d4af37;
+            margin-bottom: 15px;
+            transition: background 0.3s ease;
+        }
+        .beauty-list li:hover {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+        }
+        .beauty-list .num {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            color: #d4af37;
+            line-height: 1;
+        }
+        .beauty-list h4 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .beauty-list p {
+            margin: 0;
+            color: #9aa0a6;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+
+        /* --- ДИЗАЙН 3: ПИСЬМО (Признание) --- */
+        .letter-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, #1f2125 0%, #151619 100%);
+            padding: 60px;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+            position: relative;
+        }
+        /* Декоративные элементы письма */
+        .letter-container::before {
+            content: '“'; position: absolute; top: -20px; left: 40px;
+            font-family: 'Playfair Display', serif; font-size: 120px;
+            color: rgba(138, 180, 248, 0.1); line-height: 1;
+        }
+        .letter-container h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            color: #8ab4f8;
+            margin-top: 0;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .letter-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            line-height: 1.9;
+            color: #d1d5db;
+            margin-bottom: 30px;
+        }
+        .letter-text p {
+            margin-bottom: 20px;
+        }
+        .letter-signature {
+            text-align: right;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 24px;
+            color: #8ab4f8;
+            margin-top: 50px;
+        }
+        .letter-ps {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #3c4043;
+            color: #9aa0a6;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Медиа-запросы для мобильных */
+        @media (max-width: 768px) {
+            .content-area { padding: 20px; }
+            .tabs { margin-left: 0; }
+            
+            .blog-grid { grid-template-columns: 1fr; }
+            .blog-hero h1 { font-size: 32px; }
+            .magazine-hero h1 { font-size: 36px; }
+            .rating-display { flex-direction: column; text-align: center; gap: 15px; }
+            .rating-desc { text-align: center; }
+            .letter-container { padding: 30px; }
+            .letter-container h2 { font-size: 28px; }
+            .mock-back-btn { top: 15px; left: 15px; padding: 8px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-bar"></div>
+
+    <!-- ЭКРАН 1: Главная -->
+    <div id="home-screen">
+        <div class="google-logo-home">Google</div>
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input-home" placeholder="Введите запрос..." autocomplete="off">
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: Результаты -->
+    <div id="results-screen">
+        <div class="results-header">
+            <div class="header-top">
+                <div class="google-logo-small" onclick="goHome()">Google</div>
+                <div class="header-search">
+                    <input type="text" id="search-input-results" placeholder="Введите запрос...">
+                    <span class="search-icon" style="cursor:pointer;" onclick="doSearch()">🔍</span>
+                </div>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('all')">Все</div>
+                <div class="tab" onclick="switchTab('images')">Картинки</div>
+            </div>
+        </div>
+
+        <!-- Вкладка "Все" -->
+        <div id="content-all" class="content-area active">
+            
+            <!-- Обзор от ИИ -->
+            <div class="ai-overview">
+                <div class="ai-header">
+                    <span class="ai-sparkle">✨</span> Обзор от ИИ
+                </div>
+                <div class="ai-text">
+                    Похоже, это <strong>абсолютная правда</strong> 😊. <strong>Даша</strong> — это не просто красивая девушка. Это произведение искусства, которое я обожаю каждый день. В её глазах целая вселенная, а её улыбка способна осветить самый пасмурный день. Она не просто шикарна, она — моя самая любимая. ❤️
+                </div>
+            </div>
+
+            <!-- Ссылки на сайты -->
+            <div class="search-results-list">
+                
+                <div class="result-item" onclick="openWebsite('mock-site1')">
+                    <div class="result-header">
+                        <div class="result-favicon">💖</div>
+                        <div class="result-url">https://почему-я-люблю-дашу.ru</div>
+                    </div>
+                    <div class="result-title">Почему я люблю Дашу — Официальный сайт</div>
+                    <div class="result-snippet">Даша — это человек, который делает мою жизнь лучше каждый день. Здесь собраны главные причины, почему она стала для меня самым родным и близким человеком.</div>
+                </div>
+
+                <div class="result-item" onclick="openWebsite('mock-site2')">
+                    <div class="result-header">
+                        <div class="result-favicon">👑</div>
+                        <div class="result-url">https://dasha-beauty.net</div>
+                    </div>
+                    <div class="result-title">Даша — королева красоты и очарования</div>
+                    <div class="result-snippet">Исследование её внешности и характера. 10 неоспоримых фактов, доказывающих, что Даша — самая шикарная и притягательная девушка на планете.</div>
+                </div>
+
+                <div class="result-item" onclick="openWebsite('mock-site3')">
+                    <div class="result-header">
+                        <div class="result-favicon">✨</div>
+                        <div class="result-url">https://dasha-love.org/feelings</div>
+                    </div>
+                    <div class="result-title">Мои чувства к Даше — письмо в слух</div>
+                    <div class="result-snippet">Искреннее признание. Ты — моё вдохновение, моя муза и моя самая главная ценность. Нажми, чтобы прочитать то, что я хочу сказать тебе лично.</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Вкладка "Картинки" -->
+        <div id="content-images" class="content-area">
+            <div class="image-grid" id="image-grid">
+                <!-- Заполняется через JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО КОМПЛИМЕНТА -->
+    <div id="compliment-modal">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <p id="modal-text"></p>
+        </div>
+    </div>
+
+    <!-- МАКЕТ КЛИКАБЕЛЬНЫХ САЙТОВ (СОВРЕМЕННЫЙ ДИЗАЙН) -->
+    <div id="mock-website-screen">
+        <div class="mock-header">
+            <button class="mock-back-btn" onclick="closeWebsite()">
+                <span>⬅</span> Назад к поиску
+            </button>
+        </div>
+        
+        <!-- САЙТ 1: Блог (Почему я люблю) -->
+        <div id="mock-site1" class="mock-content">
+            <div class="content-wrapper">
+                <div class="blog-hero">
+                    <h1>Почему я люблю Дашу?</h1>
+                    <p>Наверное, этот вопрос можно задавать бесконечно, потому что ответов так же много, как звезд на небе.</p>
+                </div>
+                
+                <div class="blog-grid">
+                    <div class="blog-card">
+                        <h3>Мой самый близкий человек</h3>
+                        <p>С тобой я могу быть собой. Ты понимаешь меня без слов, поддерживаешь в любой ситуации и делаешь даже обычные дни яркими. Ты — мой тыл и моя главная мотивация.</p>
+                    </div>
+                    <div class="blog-card">
+                        <h3>Твоя забота</h3>
+                        <p>То, как ты переживаешь за меня, как радуешься моим успехам и как готовишь мне кофе по утрам — это бесценно. Мелочи, из которых складывается огромное счастье.</p>
+                    </div>
+                    <div class="blog-card">
+                        <h3>Твой характер</h3>
+                        <p>Ты сильная, но невероятно нежная. Ты умеешь вдохновлять и быть опорой. В тебе удивительным образом сочетаются мудрость, легкость и та самая женская шикарность.</p>
+                    </div>
+                    <div class="blog-card">
+                        <h3>Твой смех и взгляд</h3>
+                        <p>Твой смех лечит любую грусть. А в твоих глазах я просто растворяюсь. Я люблю каждую твою черту, каждую эмоцию. Ты — мой человек, моя вселенная и мой дом.</p>
+                    </div>
+                </div>
+
+                <div class="blog-quote">
+                    «Даша, я люблю тебя за то, что ты просто есть в моей жизни.»
+                </div>
+            </div>
+        </div>
+
+        <!-- САЙТ 2: Журнал (Королева красоты) -->
+        <div id="mock-site2" class="mock-content">
+            <div class="content-wrapper">
+                <div class="magazine-hero">
+                    <h1>Dasha</h1>
+                    <p>Queen of Beauty</p>
+                </div>
+
+                <div class="rating-display">
+                    <div class="rating-score">10/10</div>
+                    <div class="rating-desc">
+                        <strong>Общий балл:</strong> Максимальный<br>
+                        <strong>Статус:</strong> Шикарная, неотразимая, единственная в своем роде.
+                    </div>
+                </div>
+
+                <ul class="beauty-list">
+                    <li>
+                        <span class="num">01</span>
+                        <div>
+                            <h4>Взгляд</h4>
+                            <p>Твои глаза — это самое глубокое и красивое место на Земле. Когда ты смотришь на меня, я забываю, как дышать. В них можно утонуть.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="num">02</span>
+                        <div>
+                            <h4>Улыбка</h4>
+                            <p>Она способна осветить самый пасмурный день. Твоя улыбка — это мой личный источник энергии и счастья.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="num">03</span>
+                        <div>
+                            <h4>Естественность</h4>
+                            <p>Ты шикарна даже тогда, когда только проснулась, когда растрепаны волосы и нет макияжа. Твоя природная красота сводит меня с ума.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="num">04</span>
+                        <div>
+                            <h4>Стиль и грация</h4>
+                            <p>То, как ты одеваешься, как держишься, как двигаешься. В тебе есть та самая королевская грация, которая не купить ни за какие деньги.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- САЙТ 3: Письмо (Признание) -->
+        <div id="mock-site3" class="mock-content">
+            <div class="content-wrapper">
+                <div class="letter-container">
+                    <h2>Моей любимой Даше...</h2>
+                    
+                    <div class="letter-text">
+                        <p>Я долго думал, как сказать тебе всё то, что чувствую. Обычные слова кажутся слишком простыми для того, что происходит у меня внутри, когда я смотрю на тебя. Поэтому я создал этот маленький цифровой мир, где всё пропитано мыслями о тебе.</p>
+                        <p>Знаешь, до встречи с тобой я и не подозревал, что можно быть настолько счастливым просто от того, что человек рядом. Ты наполнила мою жизнь смыслом, яркими красками и невероятным теплом. Каждый день с тобой — это подарок, который я не заслужил, но очень берегу.</p>
+                        <p>Ты — самая красивая, самая умная, самая нежная и самая шикарная девушка на этой планете. И я хочу, чтобы ты всегда об этом помнила. Я люблю тебя больше, чем все поисковики мира вместе взятые.</p>
+                    </div>
+                    
+                    <div class="letter-signature">
+                        Навсегда твой... ❤️
+                    </div>
+                    
+                    <div class="letter-ps">
+                        <p>P.S. Нажми "Назад" и перейди во вкладку "Картинки", там есть кое-что ещё для тебя 😉</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // НАСТРОЙКИ: 12 ФОТОГРАФИЙ ДАШИ И КОМПЛИМЕНТЫ
+        // ==========================================
+        const photos = [
+            {
+                url: "images/1.jpg",
+                compliment: "Даша, твоя улыбка — это лучшее, что я видел в этой жизни. Ты просто космос!"
+            },
+            {
+                url: "images/2.jpg",
+                compliment: "Посмотри на этот взгляд. Разве можно быть настолько шикарной и притягательной?"
+            },
+            {
+                url: "images/3.jpg",
+                compliment: "Твои глаза сияют ярче любых звёзд. Я готов смотреть в них вечность, Даша."
+            },
+            {
+                url: "images/4.jpg",
+                compliment: "Ты выглядишь как настоящая королева. Самая красивая девушка на свете!"
+            },
+            {
+                url: "images/5.jpg",
+                compliment: "В каждом твоем движении столько грации и шарма. Ты невероятна."
+            },
+            {
+                url: "images/6.jpg",
+                compliment: "Твой стиль всегда на высоте. Ты выглядишь шикарно в любой ситуации."
+            },
+            {
+                url: "images/7.jpg",
+                compliment: "Даша, глядя на эту фотографию, я понимаю, как мне повезло. Ты само совершенство."
+            },
+            {
+                url: "images/8.jpg",
+                compliment: "Твоя естественная красота сводит меня с ума. Тебе даже не нужен макияж."
+            },
+            {
+                url: "images/9.jpg",
+                compliment: "Улыбайся чаще, пожалуйста. Твоя улыбка делает этот мир намного лучше."
+            },
+            {
+                url: "images/10.jpg",
+                compliment: "Ты как с обложки модного журнала. Модели могут нервно курить в сторонке."
+            },
+            {
+                url: "images/11.jpg",
+                compliment: "Твои черты лица — это произведение искусства. Могу любоваться вечно."
+            },
+            {
+                url: "images/12.jpg",
+                compliment: "Ты — мой личный идеал красоты. Внутри и снаружи. Люблю тебя, Даша!"
+            }
+        ];
+
+        // ==========================================
+        // ЛОГИКА
+        // ==========================================
+        const homeScreen = document.getElementById('home-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const loadingBar = document.getElementById('loading-bar');
+        const searchInputHome = document.getElementById('search-input-home');
+        const searchInputResults = document.getElementById('search-input-results');
+
+        searchInputHome.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+        searchInputResults.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+
+        function doSearch() {
+            const query = searchInputHome.value.trim() || searchInputResults.value.trim();
+            if (!query) return;
+
+            loadingBar.style.width = '0%';
+            setTimeout(() => loadingBar.style.width = '30%', 50);
+            setTimeout(() => loadingBar.style.width = '80%', 300);
+            setTimeout(() => loadingBar.style.width = '100%', 600);
+
+            setTimeout(() => {
+                homeScreen.style.display = 'none';
+                resultsScreen.style.display = 'flex';
+                searchInputResults.value = query;
+                switchTab('all');
+                setTimeout(() => { loadingBar.style.width = '0%'; }, 500);
+            }, 600);
+        }
+
+        function goHome() {
+            resultsScreen.style.display = 'none';
+            homeScreen.style.display = 'flex';
+            searchInputHome.value = '';
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if (tabName === 'all') document.querySelectorAll('.tab')[0].classList.add('active');
+            if (tabName === 'images') document.querySelectorAll('.tab')[1].classList.add('active');
+
+            document.getElementById('content-all').classList.remove('active');
+            document.getElementById('content-images').classList.remove('active');
+
+            if (tabName === 'all') document.getElementById('content-all').classList.add('active');
+            else document.getElementById('content-images').classList.add('active');
+        }
+
+        // Заполнение сетки картинок
+        const imageGrid = document.getElementById('image-grid');
+        photos.forEach(photo => {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.onclick = () => openModal(photo.compliment);
+            const img = document.createElement('img');
+            img.src = photo.url;
+            card.appendChild(img);
+            imageGrid.appendChild(card);
+        });
+
+        // Модалка
+        const modal = document.getElementById('compliment-modal');
+        const modalText = document.getElementById('modal-text');
+
+        function openModal(text) {
+            modalText.textContent = text;
+            modal.style.display = 'flex';
+        }
+        function closeModal() { modal.style.display = 'none'; }
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        // Открытие фейковых сайтов
+        function openWebsite(siteId) {
+            document.getElementById('mock-website-screen').style.display = 'block';
+            document.querySelectorAll('.mock-content').forEach(el => el.style.display = 'none');
+            document.getElementById(siteId).style.display = 'block';
+            window.scrollTo(0, 0); 
+        }
+
+        // Закрытие фейковых сайтов
+        function closeWebsite() {
+            document.getElementById('mock-website-screen').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
